@@ -1,0 +1,772 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Formation personnalisée - GeoCongo AI (Demo)</title>
+<style>
+  :root{
+    --bg:#f5f7fb;
+    --card:#ffffff;
+    --accent:#1f8dd6;
+    --muted:#667085;
+    --rounded:12px;
+    --glass: rgba(255,255,255,0.8);
+  }
+  *{box-sizing:border-box;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;}
+  body{margin:0;background:linear-gradient(180deg,#f3f7fb,var(--bg));color:#0f1724;}
+  .app{display:flex;min-height:100vh;}
+  /* Sidebar */
+  .sidebar{
+    width:280px;background:linear-gradient(180deg, #ffffff, #f7fbff);
+    border-right:1px solid #e6eef9;padding:20px;display:flex;flex-direction:column;gap:16px;
+  }
+  .logo{font-weight:700;font-size:18px;color:var(--accent);margin-bottom:4px}
+  .meta{font-size:13px;color:var(--muted)}
+  .list{flex:1;overflow:auto;padding-top:6px;}
+  .section-title{font-size:13px;color:#334155;margin:10px 0 6px}
+  .item{display:flex;align-items:center;gap:10px;padding:8px;border-radius:10px;cursor:pointer}
+  .item:hover{background:#eef6ff}
+  .item.active{background:linear-gradient(90deg,#e6f2ff,#f7fbff);font-weight:600}
+  .badge{background:var(--accent);color:#fff;padding:6px 10px;border-radius:999px;font-size:12px}
+  /* Main */
+  .main{flex:1;padding:28px;overflow:auto}
+  .header{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:18px}
+  .title{font-size:24px;font-weight:700;display:flex;gap:12px;align-items:center}
+  .subtitle{color:var(--muted);font-size:13px}
+  .controls{display:flex;gap:8px;align-items:center}
+  .btn{background:var(--accent);color:#fff;padding:10px 14px;border-radius:10px;border:none;cursor:pointer;font-weight:600}
+  .btn.secondary{background:#eef2fb;color:var(--accent);border:1px solid #dbeefe}
+  .row{display:flex;gap:16px;align-items:flex-start}
+  /* Card */
+  .card{background:var(--card);padding:16px;border-radius:var(--rounded);box-shadow:0 4px 18px rgba(15,23,36,0.04);margin-bottom:16px}
+  .grid{display:grid;grid-template-columns:1fr 360px;gap:18px}
+  /* Lesson pane */
+  .lesson-title{font-weight:700;font-size:18px;margin-bottom:8px}
+  .lesson-content{background:linear-gradient(180deg,#fff,#fbfdff);padding:14px;border-radius:10px;border:1px solid #eef5ff;color:#0b1220;min-height:140px}
+  .refs{font-size:13px;color:var(--muted);margin-top:8px}
+  .quiz-box{margin-top:12px}
+  .question{margin-bottom:12px;padding:12px;border-radius:10px;border:1px solid #eef2fb;background:#fff}
+  .options{display:flex;flex-direction:column;gap:8px;margin-top:8px}
+  .opt{padding:10px;border-radius:8px;border:1px solid #e6edf7;cursor:pointer}
+  .opt.selected{background:#e6f2ff;border-color:var(--accent)}
+  .footer-actions{display:flex;justify-content:space-between;gap:12px;margin-top:12px}
+  .muted{color:var(--muted);font-size:13px}
+  /* Progress */
+  .progress{height:10px;background:#eef3fb;border-radius:999px;overflow:hidden}
+  .progress > i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),#6db9ff);width:0%}
+  /* Final results */
+  .result{font-size:18px;font-weight:700}
+  .result-break{display:flex;gap:12px;margin-top:10px}
+  .small{font-size:14px;color:var(--muted)}
+  /* Responsive */
+  @media (max-width:900px){
+    .grid{grid-template-columns:1fr; }
+    .sidebar{display:none}
+    .main{padding:16px}
+  }
+  /* Tiny */
+  .pill{background:#f1f9ff;border-radius:999px;padding:6px 10px;color:var(--accent);font-weight:600;font-size:12px}
+  .daylist{display:flex;gap:8px;flex-wrap:wrap}
+  .day{padding:6px 8px;border-radius:8px;background:#fff;border:1px solid #eef6ff;cursor:pointer}
+  .day.active{background:linear-gradient(90deg,#e6f2ff,#f7fbff);border-color:var(--accent)}
+  .cert-btn{background:#fff;border:1px dashed #cfe4ff;color:var(--accent);padding:10px;border-radius:10px}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <aside class="sidebar" id="sidebar">
+    <div>
+      <div class="logo">GeoCongo AI</div>
+      <div class="meta">Formation personnalisée — Demo</div>
+    </div>
+
+    <div class="list">
+      <div class="section-title">Sommaire</div>
+      <div id="modulesList"></div>
+
+      <div class="section-title">Plan journalier</div>
+      <div id="daysList" style="display:flex;flex-direction:column;gap:8px"></div>
+
+      <div style="height:24px"></div>
+      <div class="section-title">Progression</div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <div style="flex:1">
+          <div class="small muted" id="lessonsCompleted">Leçons complétées: 0 / 0</div>
+          <div class="progress" style="margin-top:8px"><i id="progBar"></i></div>
+        </div>
+      </div>
+    </div>
+
+  </aside>
+
+  <main class="main">
+    <div class="header">
+      <div>
+        <div class="title" id="courseTitle">Titre de la formation</div>
+        <div class="subtitle" id="courseSubtitle">Description courte</div>
+      </div>
+      <div class="controls">
+        <button class="btn secondary" id="btnOverview">Vue d'ensemble</button>
+        <button class="btn" id="btnStartFinal">Passer le test final</button>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div>
+        <div class="card card-overview" id="overviewCard">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div>
+              <div style="font-weight:700;font-size:16px" id="metaTitle">Programme</div>
+              <div class="muted" id="metaInfo">Durée • minutes/jour • etc</div>
+            </div>
+            <div style="text-align:right">
+              <div class="pill" id="pillLevel">Niveau</div>
+              <div class="muted" style="font-size:12px;margin-top:6px" id="genInfo">Généré avec GPT-4</div>
+            </div>
+          </div>
+
+          <hr style="border:none;height:1px;background:#eef6ff;margin:12px 0">
+
+          <div id="moduleRenderer"></div>
+        </div>
+
+        <div id="lessonArea" class="card" style="margin-top:14px">
+          <div class="lesson-title" id="lessonTitle">Sélectionnez une leçon</div>
+          <div class="lesson-content" id="lessonContent">Choisis un module / une leçon à gauche pour commencer.</div>
+          <div class="refs" id="lessonRefs"></div>
+
+          <div class="quiz-box" id="quizBox"></div>
+
+          <div class="footer-actions">
+            <div class="muted" id="lessonFooter">—</div>
+            <div style="display:flex;gap:8px">
+              <button class="btn secondary" id="btnPrev">Précédent</button>
+              <button class="btn" id="btnNext">Suivant</button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <aside>
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div style="font-weight:700">Plan journalier</div>
+            <div class="small muted" id="planInfo">Réparti sur X jours</div>
+          </div>
+
+          <div style="margin-top:10px" id="dayRenderer"></div>
+        </div>
+
+        <div class="card" style="margin-top:12px">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div style="font-weight:700">Actions</div>
+            <div class="small muted">Interagir</div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px;margin-top:12px">
+            <button class="btn secondary" id="btnMarkComplete">Marquer la leçon comme lue</button>
+            <button class="btn" id="btnShowScore">Voir le score final</button>
+            <button class="cert-btn" id="btnCertificate">Imprimer certificat</button>
+          </div>
+        </div>
+      </aside>
+    </div>
+
+  </main>
+</div>
+
+<script>
+/* ====== PLUG: JSON de formation (exemple fourni) ====== */
+const formationJSON = {
+  "formation_id": "f_20250921_001",
+  "user_id": "u_06254474-2095-452e-8723-290fc885e723",
+  "titre": "Initiation à la Géologie du Congo - Parcours Intensif",
+  "description_courte": "Programme intensif personnalisé pour maîtriser les bases de la géologie du Congo en 7 jours, avec lectures ciblées, exercices et quiz quotidiens.",
+  "contexte_utilisateur": {
+    "objectif": "Préparer un entretien d'embauche en exploration minière",
+    "niveau": "Intermédiaire",
+    "motivation": "Rattraper des cours manqués et se préparer à un entretien",
+    "secteur_vise": "Exploration minière",
+    "date_debut": "2025-10-01",
+    "duree_jours": 7,
+    "minutes_par_jour": 90
+  },
+  "competences_ciblees": [
+    "Interprétation de cartes géologiques",
+    "Reconnaissance des formations stratiformes",
+    "Lecture et synthèse de rapports géologiques"
+  ],
+  "generation": { "timestamp": "2025-09-21T12:00:00Z","model":"gpt-4" },
+  "programme": [
+    {
+      "module_id": "m1",
+      "titre": "Introduction & Contexte géologique du Congo",
+      "resume": "Connaissances de base sur la géologie régionale, provinces géologiques et cadres tectoniques pertinents pour l'exploration.",
+      "estimation_minutes": 90,
+      "lecons": [
+        {
+          "lecon_id": "m1_l1",
+          "titre": "Cadre tectonique et provinces géologiques",
+          "contenu_resume": "Vue d'ensemble des provinces géologiques du Congo, unités lithologiques principales et implications pour la minéralogie.",
+          "estimated_minutes": 30,
+          "references": [
+            { "document_id": "doc_001", "titre": "Carte géologique régionale", "page_start": 1, "page_end": 6 },
+            { "document_id": "doc_005", "titre": "Rapport synthèse UOB 2018", "page_start": 23, "page_end": 25 }
+          ]
+        },
+        {
+          "lecon_id": "m1_l2",
+          "titre": "Terminologie et méthodes d'observation de terrain",
+          "contenu_resume": "Principales méthodes de cartographie et d'observation en contexte de terrain, identification visuelle des lithologies.",
+          "estimated_minutes": 30,
+          "references": [
+            { "document_id": "doc_023", "titre": "Guide d'observation de terrain", "page_start": 10, "page_end": 22 }
+          ]
+        },
+        {
+          "lecon_id": "m1_l3",
+          "titre": "Synthèse: implications pour l'exploration",
+          "contenu_resume": "Comment relier observations et cibles d'exploration.",
+          "estimated_minutes": 30,
+          "references": []
+        }
+      ],
+      "quiz": {
+        "quiz_id": "m1_q1",
+        "titre": "Quiz module 1",
+        "questions": [
+          {
+            "q_id": "m1_q1_q1",
+            "texte": "Quelle province géologique est la plus susceptible d'héberger des stratiformes?",
+            "options": ["Province A", "Province B", "Province C", "Province D"],
+            "correct_option_index": 1,
+            "explication": "La Province B présente des unités sédimentaires favorables aux stratiformes."
+          },
+          {
+            "q_id": "m1_q1_q2",
+            "texte": "Quel outil est essentiel pour la cartographie de terrain?",
+            "options": ["Scanner laser", "Boussole géologique", "Spectromètre", "Drone"],
+            "correct_option_index": 1,
+            "explication": "La boussole géologique permet de mesurer l'orientation des plans et des plis."
+          }
+        ],
+        "poids": 0.1
+      }
+    },
+    {
+      "module_id": "m2",
+      "titre": "Formation et identification des minéralisations stratiformes",
+      "resume": "Étude des environnements de dépôt et reconnaissance des textures et minéraux indicateurs.",
+      "estimation_minutes": 120,
+      "lecons": [
+        {
+          "lecon_id": "m2_l1",
+          "titre": "Processus de dépôt des stratiformes",
+          "contenu_resume": "Origines des stratiformes, indices géochimiques et minéralogiques.",
+          "estimated_minutes": 40,
+          "references": [
+            { "document_id": "doc_045", "titre": "Étude minéralogique RD Congo", "page_start": 12, "page_end": 30 }
+          ]
+        },
+        {
+          "lecon_id": "m2_l2",
+          "titre": "Reconnaissance des textures et des indices visuels",
+          "contenu_resume": "Clés d'observation pour repérer des indices minéralogiques in situ.",
+          "estimated_minutes": 40,
+          "references": [
+            { "document_id": "doc_045", "titre": "Étude minéralogique RD Congo", "page_start": 31, "page_end": 45 }
+          ]
+        },
+        {
+          "lecon_id": "m2_l3",
+          "titre": "Exemples de cas locaux",
+          "contenu_resume": "Analyse de cas concrets avec cartes et coupes.",
+          "estimated_minutes": 40,
+          "references": [
+            { "document_id": "doc_007", "titre": "Cas d'étude: zone X", "page_start": 5, "page_end": 18 }
+          ]
+        }
+      ],
+      "quiz": {
+        "quiz_id": "m2_q1",
+        "titre": "Quiz module 2",
+        "questions": [
+          {
+            "q_id": "m2_q1_q1",
+            "texte": "Quel minéral indicateur est souvent associé aux stratiformes cuivreux?",
+            "options": ["Quartz", "Chalcopyrite", "Calcite", "Olivine"],
+            "correct_option_index": 1,
+            "explication": "La chalcopyrite est un sulfure de cuivre courant dans ces environnements."
+          }
+        ],
+        "poids": 0.15
+      }
+    }
+  ],
+  "planning_journalier": [
+    {
+      "jour": 1,
+      "date": "2025-10-01",
+      "minutes_total": 90,
+      "activites": [
+        { "type": "lecon", "ref": "m1_l1", "minutes": 30 },
+        { "type": "lecon", "ref": "m1_l2", "minutes": 30 },
+        { "type": "quiz", "ref": "m1_q1", "minutes": 30 }
+      ]
+    },
+    {
+      "jour": 2,
+      "date": "2025-10-02",
+      "minutes_total": 90,
+      "activites": [
+        { "type": "lecon", "ref": "m1_l3", "minutes": 30 },
+        { "type": "lecon", "ref": "m2_l1", "minutes": 40 },
+        { "type": "quiz", "ref": "m2_q1", "minutes": 20 }
+      ]
+    },
+    {
+      "jour": 3,
+      "date": "2025-10-03",
+      "minutes_total": 90,
+      "activites": [
+        { "type": "lecon", "ref": "m2_l2", "minutes": 40 },
+        { "type": "lecon", "ref": "m2_l3", "minutes": 40 },
+        { "type": "revision", "ref": "m1_summary", "minutes": 10 }
+      ]
+    },
+    {
+      "jour": 4,
+      "date": "2025-10-04",
+      "minutes_total": 90,
+      "activites": [
+        { "type": "atelier", "titre": "Interprétation carte", "minutes": 60 },
+        { "type": "quiz", "ref": "m1_q1", "minutes": 30 }
+      ]
+    },
+    {
+      "jour": 5,
+      "date": "2025-10-05",
+      "minutes_total": 90,
+      "activites": [
+        { "type": "lecon", "ref": "m2_l1", "minutes": 40 },
+        { "type": "atelier", "titre": "Exercice terrain simulé", "minutes": 50 }
+      ]
+    },
+    {
+      "jour": 6,
+      "date": "2025-10-06",
+      "minutes_total": 90,
+      "activites": [
+        { "type": "revision", "titre": "Synthèse modules 1-2", "minutes": 90 }
+      ]
+    },
+    {
+      "jour": 7,
+      "date": "2025-10-07",
+      "minutes_total": 90,
+      "activites": [
+        { "type": "test_final", "titre": "Test final: 30 questions", "minutes": 60 },
+        { "type": "correction", "titre": "Correction & feedback", "minutes": 30 }
+      ]
+    }
+  ],
+  "evaluation": {
+    "structure": [
+      { "type": "quiz_module", "poids_total": 0.25 },
+      { "type": "test_final", "poids_total": 0.50 },
+      { "type": "participation_ateliers", "poids_total": 0.25 }
+    ],
+    "calcul_notes": {
+      "exemple": "note_finale = 0.25 * moyenne(quizzes) + 0.50 * score_test_final + 0.25 * score_ateliers"
+    },
+    "seuils_mentions": {
+      "Excellent": 85,
+      "Bien": 70,
+      "Passable": 50,
+      "Insuffisant": 0
+    }
+  },
+  "suivi_progression": {
+    "scores": [],
+    "etat_global": "non_demarree"
+  },
+  "certificat": {
+    "template_id": "cert_geo_01",
+    "titre_certificat": "Certificat de formation - GeoCongo AI",
+    "champs": {
+      "nom_participant": "Gerard Cubaka",
+      "formation": "Initiation à la Géologie du Congo - Parcours Intensif",
+      "date_debut": "2025-10-01",
+      "date_fin": "2025-10-07",
+      "score_final": null,
+      "mention": null
+    },
+    "telechargement_url": null
+  },
+  "meta": { "lang": "fr","visibility":"private","tags":["géologie","stratiforme","formation_personnalisée"] }
+};
+
+/* ====== Application logic ====== */
+
+let state = {
+  currentModuleIndex: 0,
+  currentLessonIndex: 0,
+  completedLessons: new Set(),
+  answers: {}, // q_id -> selectedIndex
+  finalTestAnswers: {},
+  finalTestTaken: false
+};
+
+function init(){
+  // render header meta
+  document.getElementById('courseTitle').textContent = formationJSON.titre;
+  document.getElementById('courseSubtitle').textContent = formationJSON.description_courte;
+  document.getElementById('metaInfo').textContent = `${formationJSON.contexte_utilisateur.duree_jours} jours • ${formationJSON.contexte_utilisateur.minutes_par_jour} min/jour • Début: ${formationJSON.contexte_utilisateur.date_debut}`;
+  document.getElementById('pillLevel').textContent = formationJSON.contexte_utilisateur.niveau;
+  document.getElementById('genInfo').textContent = `Généré: ${new Date(formationJSON.generation.timestamp).toLocaleString()}`;
+
+  renderSidebar();
+  renderPlan();
+  renderModuleList();
+  updateProgress();
+  bindButtons();
+}
+
+function bindButtons(){
+  document.getElementById('btnNext').onclick = () => { goLesson(1); };
+  document.getElementById('btnPrev').onclick = () => { goLesson(-1); };
+  document.getElementById('btnMarkComplete').onclick = markLessonComplete;
+  document.getElementById('btnShowScore').onclick = showFinalScore;
+  document.getElementById('btnStartFinal').onclick = startFinalTest;
+  document.getElementById('btnCertificate').onclick = printCertificate;
+  document.getElementById('btnOverview').onclick = () => { document.getElementById('overviewCard').scrollIntoView({behavior:'smooth'}); };
+}
+
+function renderSidebar(){
+  const container = document.getElementById('modulesList');
+  container.innerHTML = '';
+  formationJSON.programme.forEach((m, mi) => {
+    const div = document.createElement('div');
+    div.className = 'item' + (mi === state.currentModuleIndex ? ' active':'' );
+    div.innerHTML = `<div style="flex:1"><div style="font-weight:600">${m.titre}</div><div class="small muted">${m.lecons.length} leçons • ${m.estimation_minutes} min</div></div><div class="muted">Module ${mi+1}</div>`;
+    div.onclick = () => { state.currentModuleIndex = mi; state.currentLessonIndex = 0; renderModuleList(); renderCurrentLesson(); };
+    container.appendChild(div);
+  });
+}
+
+function renderModuleList(){
+  const el = document.getElementById('moduleRenderer');
+  el.innerHTML = '';
+  formationJSON.programme.forEach((m, idx) => {
+    const mdiv = document.createElement('div');
+    mdiv.style.padding='8px 0';
+    mdiv.innerHTML = `<div style="font-weight:700">${m.titre}</div><div class="muted" style="font-size:13px">${m.resume}</div>`;
+    el.appendChild(mdiv);
+  });
+  renderCurrentLesson();
+}
+
+function renderPlan(){
+  const days = document.getElementById('dayRenderer');
+  days.innerHTML = '';
+  formationJSON.planning_journalier.forEach((d, i) => {
+    const box = document.createElement('div');
+    box.className='day';
+    box.innerHTML = `<div style="font-weight:600">Jour ${d.jour}</div><div class="muted" style="font-size:13px">${d.date} • ${d.minutes_total} min</div>`;
+    box.onclick = () => { scrollToPlanDay(i) };
+    days.appendChild(box);
+  });
+  document.getElementById('planInfo').textContent = `Sur ${formationJSON.contexte_utilisateur.duree_jours} jours`;
+}
+
+function scrollToPlanDay(i){
+  // jump to module related to activities
+  const day = formationJSON.planning_journalier[i];
+  // find first lesson ref to highlight
+  for(const act of day.activites){
+    if(act.type === 'lecon' && act.ref){
+      // find module and lesson index
+      const {mi, li} = findLessonByRef(act.ref);
+      if(mi!==null){ state.currentModuleIndex = mi; state.currentLessonIndex = li; renderSidebar(); renderModuleList(); renderCurrentLesson(); return; }
+    }
+  }
+  alert('Activité affichée (pas de leçon liée)');
+}
+
+function findLessonByRef(ref){
+  for(let mi=0;mi<formationJSON.programme.length;mi++){
+    const m = formationJSON.programme[mi];
+    for(let li=0;li<m.lecons.length;li++){
+      if(m.lecons[li].lecon_id === ref) return {mi, li};
+    }
+  }
+  return {mi:null, li:null};
+}
+
+function renderCurrentLesson(){
+  const m = formationJSON.programme[state.currentModuleIndex];
+  const lesson = m.lecons[state.currentLessonIndex];
+  document.getElementById('lessonTitle').textContent = `${m.titre} — ${lesson.titre}`;
+  document.getElementById('lessonContent').textContent = lesson.contenu_resume;
+  const refs = lesson.references || [];
+  document.getElementById('lessonRefs').innerHTML = refs.length? 'Références: ' + refs.map(r=>`${r.titre} (p.${r.page_start}-${r.page_end})`).join(' • ') : '';
+  document.getElementById('lessonFooter').textContent = `${state.currentModuleIndex+1}.${state.currentLessonIndex+1} • ${lesson.estimated_minutes || 0} min`;
+
+  renderQuizForModule(state.currentModuleIndex);
+  highlightSidebarSelection();
+}
+
+function highlightSidebarSelection(){
+  const items = document.querySelectorAll('#modulesList .item');
+  items.forEach((it, idx)=> it.classList.toggle('active', idx===state.currentModuleIndex));
+}
+
+function goLesson(dir){
+  const m = formationJSON.programme[state.currentModuleIndex];
+  let li = state.currentLessonIndex + dir;
+  let mi = state.currentModuleIndex;
+  if(li < 0){
+    if(mi>0){
+      mi--; li = formationJSON.programme[mi].lecons.length-1;
+    } else return;
+  } else if(li >= m.lecons.length){
+    if(mi < formationJSON.programme.length-1){
+      mi++; li = 0;
+    } else return;
+  }
+  state.currentModuleIndex = mi;
+  state.currentLessonIndex = li;
+  renderSidebar();
+  renderModuleList();
+  renderCurrentLesson();
+}
+
+function renderQuizForModule(moduleIndex){
+  const box = document.getElementById('quizBox');
+  box.innerHTML = '';
+  const mod = formationJSON.programme[moduleIndex];
+  if(!mod.quiz) return;
+  const quiz = mod.quiz;
+  const qDiv = document.createElement('div');
+  qDiv.innerHTML = `<div style="font-weight:700;margin-bottom:8px">${quiz.titre}</div>`;
+  quiz.questions.forEach(q=>{
+    const qEl = document.createElement('div'); qEl.className='question';
+    qEl.id = 'q-'+q.q_id;
+    qEl.innerHTML = `<div>${q.texte}</div>`;
+    const opts = document.createElement('div'); opts.className='options';
+    q.options.forEach((opt, oi)=>{
+      const o = document.createElement('div');
+      o.className='opt' + ((state.answers[q.q_id]===oi)?' selected':'');
+      o.textContent = opt;
+      o.onclick = () => { state.answers[q.q_id] = oi; updateOptionSelection(q.q_id); };
+      opts.appendChild(o);
+    });
+    qEl.appendChild(opts);
+    qDiv.appendChild(qEl);
+  });
+  // show submit module quiz button
+  const submit = document.createElement('div'); submit.style.marginTop='10px';
+  const btn = document.createElement('button'); btn.className='btn'; btn.textContent='Soumettre quiz module';
+  btn.onclick = () => { gradeModuleQuiz(moduleIndex); };
+  submit.appendChild(btn);
+  qDiv.appendChild(submit);
+  box.appendChild(qDiv);
+}
+
+function updateOptionSelection(qid){
+  const el = document.getElementById('q-'+qid);
+  if(!el) return;
+  const opts = el.querySelectorAll('.opt');
+  opts.forEach((o, idx)=> o.classList.toggle('selected', state.answers[qid]===idx));
+}
+
+function gradeModuleQuiz(moduleIndex){
+  const mod = formationJSON.programme[moduleIndex];
+  if(!mod.quiz) return alert('Aucun quiz pour ce module');
+  const q = mod.quiz;
+  let correct = 0;
+  q.questions.forEach(ques=>{
+    const sel = state.answers[ques.q_id];
+    if(typeof sel === 'number' && sel === ques.correct_option_index) correct++;
+  });
+  const score = Math.round((correct / q.questions.length) * 100);
+  alert(`Quiz terminé: ${score}% (${correct}/${q.questions.length})`);
+  // store structure for progression
+  const prev = formationJSON.suivi_progression.scores || [];
+  prev.push({module_id: mod.module_id, type:'module_quiz', score, timestamp:Date.now()});
+  formationJSON.suivi_progression.scores = prev;
+  updateProgress();
+}
+
+/* Final test construction: combine all module questions */
+function startFinalTest(){
+  // build final test from module questions (flatten)
+  const questions = [];
+  formationJSON.programme.forEach(m=>{
+    if(m.quiz && m.quiz.questions){
+      m.quiz.questions.forEach(q=> questions.push({...q, module: m.module_id}));
+    }
+  });
+  if(questions.length===0) return alert('Aucun quiz trouvé pour créer le test final.');
+  // shuffle and pick up to 20 (for demo)
+  const shuffled = questions.sort(()=>Math.random()-0.5).slice(0, Math.min(20,questions.length));
+  openFinalTestModal(shuffled);
+}
+
+function openFinalTestModal(questions){
+  // simple full-screen modal style prompt (built-in)
+  const modal = document.createElement('div');
+  modal.style.position='fixed'; modal.style.left=0; modal.style.top=0; modal.style.right=0; modal.style.bottom=0;
+  modal.style.background='rgba(7,12,20,0.6)'; modal.style.zIndex=9999; modal.style.display='flex'; modal.style.alignItems='center'; modal.style.justifyContent='center';
+  const box = document.createElement('div'); box.style.width='90%'; box.style.maxWidth='900px'; box.style.maxHeight='90%'; box.style.overflow='auto';
+  box.className='card';
+  const header = document.createElement('div'); header.innerHTML = `<div style="font-weight:700">Test final</div><div class="muted">Répondez aux questions suivantes</div>`;
+  box.appendChild(header);
+  const form = document.createElement('div'); form.style.marginTop='12px';
+  questions.forEach((q, idx)=>{
+    const qEl = document.createElement('div'); qEl.className='question';
+    qEl.innerHTML = `<div style="font-weight:600">Q${idx+1}. ${q.texte}</div>`;
+    const opts = document.createElement('div'); opts.className='options';
+    q.options.forEach((opt, oi)=>{
+      const o = document.createElement('div'); o.className='opt'; o.textContent=opt;
+      o.onclick = () => {
+        // mark answer
+        state.finalTestAnswers['final_'+idx] = oi;
+        // visual
+        Array.from(opts.children).forEach(ch => ch.classList.remove('selected'));
+        o.classList.add('selected');
+      };
+      opts.appendChild(o);
+    });
+    qEl.appendChild(opts);
+    form.appendChild(qEl);
+  });
+  box.appendChild(form);
+  const actions = document.createElement('div'); actions.style.display='flex'; actions.style.justifyContent='flex-end'; actions.style.gap='8px'; actions.style.marginTop='12px';
+  const cancel = document.createElement('button'); cancel.className='btn secondary'; cancel.textContent='Annuler';
+  cancel.onclick = ()=> modal.remove();
+  const submit = document.createElement('button'); submit.className='btn'; submit.textContent='Terminer le test';
+  submit.onclick = () => {
+    // grade
+    let correct=0;
+    questions.forEach((q, idx)=>{
+      const sel = state.finalTestAnswers['final_'+idx];
+      if(typeof sel==='number' && sel===q.correct_option_index) correct++;
+    });
+    const score = Math.round((correct / questions.length) * 100);
+    formationJSON.suivi_progression.scores.push({type:'final_test', score, timestamp: Date.now()});
+    state.finalTestTaken = true;
+    modal.remove();
+    alert('Test final terminé: ' + score + '%');
+    showFinalScore();
+  };
+  actions.appendChild(cancel); actions.appendChild(submit);
+  box.appendChild(actions);
+  modal.appendChild(box);
+  document.body.appendChild(modal);
+}
+
+/* compute final score */
+function computeFinalScore(){
+  const scores = formationJSON.suivi_progression.scores || [];
+  // module quizzes average
+  const moduleScores = scores.filter(s=>s.type==='module_quiz').map(s=>s.score);
+  const avgModule = moduleScores.length? (moduleScores.reduce((a,b)=>a+b,0)/moduleScores.length):0;
+  // final test
+  const finals = scores.filter(s=>s.type==='final_test').map(s=>s.score);
+  const finalScore = finals.length? (finals[finals.length-1]) : 0;
+  // participation: mark lessons completed %
+  const totalLessons = formationJSON.programme.reduce((acc,m)=>acc + m.lecons.length,0);
+  const completed = state.completedLessons.size;
+  const participation = totalLessons? Math.round((completed/totalLessons)*100):0;
+  // weights from JSON evaluation
+  const weights = {};
+  formationJSON.evaluation.structure.forEach(s => weights[s.type] = s.poids_total);
+  const wQuiz = weights['quiz_module'] ?? 0.25;
+  const wFinal = weights['test_final'] ?? 0.50;
+  const wPart = weights['participation_ateliers'] ?? 0.25;
+  const total = Math.round((avgModule * wQuiz) + (finalScore * wFinal) + (participation * wPart));
+  return {avgModule, finalScore, participation, total, breakdown:{wQuiz,wFinal,wPart}};
+}
+
+function showFinalScore(){
+  const res = computeFinalScore();
+  const modal = document.createElement('div');
+  modal.style.position='fixed'; modal.style.left=0; modal.style.top=0; modal.style.right=0; modal.style.bottom=0;
+  modal.style.background='rgba(7,12,20,0.6)'; modal.style.zIndex=9999; modal.style.display='flex'; modal.style.alignItems='center'; modal.style.justifyContent='center';
+  const box = document.createElement('div'); box.style.width='90%'; box.style.maxWidth='700px'; box.className='card';
+  box.innerHTML = `<div style="font-weight:800;font-size:20px">Résultat final</div>`;
+  box.innerHTML += `<div style="margin-top:8px" class="small muted">Détail des scores</div>`;
+  box.innerHTML += `<div style="margin-top:12px"><div class="result">Note finale: ${res.total}%</div></div>`;
+  box.innerHTML += `<div class="result-break"><div style="flex:1"><div class="small muted">Quiz (moyenne)</div><div style="font-weight:700">${Math.round(res.avgModule)}%</div></div><div style="flex:1"><div class="small muted">Test final</div><div style="font-weight:700">${Math.round(res.finalScore)}%</div></div><div style="flex:1"><div class="small muted">Participation</div><div style="font-weight:700">${Math.round(res.participation)}%</div></div></div>`;
+  box.innerHTML += `<div style="margin-top:12px" class="small muted">Décomposition: quiz x ${res.breakdown.wQuiz} + test x ${res.breakdown.wFinal} + participation x ${res.breakdown.wPart}</div>`;
+  const actions = document.createElement('div'); actions.style.display='flex'; actions.style.justifyContent='flex-end'; actions.style.gap='8px'; actions.style.marginTop='14px';
+  const close = document.createElement('button'); close.className='btn secondary'; close.textContent='Fermer';
+  close.onclick = ()=> modal.remove();
+  const cert = document.createElement('button'); cert.className='btn'; cert.textContent='Générer certificat';
+  cert.onclick = () => { modal.remove(); printCertificate(true); };
+  actions.appendChild(close); actions.appendChild(cert);
+  box.appendChild(actions);
+  modal.appendChild(box);
+  document.body.appendChild(modal);
+}
+
+/* mark lesson complete */
+function markLessonComplete(){
+  const m = formationJSON.programme[state.currentModuleIndex];
+  const lesson = m.lecons[state.currentLessonIndex];
+  state.completedLessons.add(lesson.lecon_id);
+  updateProgress();
+  alert('Leçon marquée comme complétée');
+}
+
+function updateProgress(){
+  const totalLessons = formationJSON.programme.reduce((acc,m)=>acc + m.lecons.length,0);
+  const completed = state.completedLessons.size;
+  const pct = totalLessons? Math.round((completed/totalLessons)*100):0;
+  document.getElementById('lessonsCompleted').textContent = `Leçons complétées: ${completed} / ${totalLessons}`;
+  document.getElementById('progBar').style.width = pct+'%';
+}
+
+/* Certificate: open a printable page */
+function printCertificate(openOnly=false){
+  const res = computeFinalScore();
+  const certData = formationJSON.certificat.champs;
+  const name = certData.nom_participant || 'Utilisateur';
+  const title = certData.formation || formationJSON.titre;
+  const start = certData.date_debut || formationJSON.contexte_utilisateur.date_debut;
+  const end = certData.date_fin || new Date(new Date(start).getTime() + (formationJSON.contexte_utilisateur.duree_jours*24*3600*1000)).toISOString().slice(0,10);
+  const score = res.total;
+  let mention = 'Insuffisant';
+  if(score >= formationJSON.evaluation.seuils_mentions.Excellent) mention='Excellent';
+  else if(score >= formationJSON.evaluation.seuils_mentions.Bien) mention='Bien';
+  else if(score >= formationJSON.evaluation.seuils_mentions.Passable) mention='Passable';
+
+  const html = `
+  <html><head><title>Certificat</title>
+  <style>body{font-family:Arial;background:#fff;color:#0b1220;padding:40px} .card{border:6px solid #e6f2ff;padding:30px;border-radius:12px;text-align:center} h1{color:#1f8dd6} .muted{color:#6b7280}</style>
+  </head><body>
+    <div class="card">
+      <h1>Certificat de formation</h1>
+      <h2 style="margin-top:8px">${title}</h2>
+      <p class="muted">Décerné à</p>
+      <h2 style="margin:6px 0">${name}</h2>
+      <p class="muted">${start} — ${end}</p>
+      <div style="margin-top:18px;font-size:20px;font-weight:700">${score}% — ${mention}</div>
+      <p class="muted" style="margin-top:14px">GeoCongo AI — Formation personnalisée</p>
+    </div>
+  </body></html>
+  `;
+  const w = window.open('', '_blank');
+  w.document.write(html);
+  if(!openOnly) w.print();
+}
+
+/* Initialize */
+init();
+
+</script>
+</body>
+</html>
