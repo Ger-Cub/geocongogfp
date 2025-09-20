@@ -20,7 +20,9 @@ const Index = () => {
     navigateLesson,
     calculateProgress,
     getCurrentLesson,
-    getCurrentModule
+    getCurrentModule,
+    canAccessModule,
+    canNavigateNext
   } = useFormationState(formationSample);
 
   const progress = calculateProgress();
@@ -28,8 +30,29 @@ const Index = () => {
   const currentModule = getCurrentModule();
 
   const handleLessonSelect = (moduleIndex: number, lessonIndex: number) => {
-    setCurrentLesson(moduleIndex, lessonIndex);
-    setShowOverview(false);
+    if (canAccessModule(moduleIndex)) {
+      setCurrentLesson(moduleIndex, lessonIndex);
+      setShowOverview(false);
+    } else {
+      toast({
+        title: "Accès restreint",
+        description: "Vous devez terminer les modules précédents pour accéder à celui-ci.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleModuleSelect = (moduleIndex: number) => {
+    if (canAccessModule(moduleIndex)) {
+      setCurrentLesson(moduleIndex, 0);
+      setShowOverview(false);
+    } else {
+      toast({
+        title: "Accès restreint", 
+        description: "Vous devez terminer les modules précédents pour accéder à celui-ci.",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleMarkComplete = () => {
@@ -71,6 +94,8 @@ const Index = () => {
         state={state}
         progress={progress}
         onLessonSelect={handleLessonSelect}
+        onModuleSelect={handleModuleSelect}
+        canAccessModule={canAccessModule}
       />
       
       <main className="flex-1 p-6 overflow-auto">
@@ -89,6 +114,7 @@ const Index = () => {
                 lesson={currentLesson}
                 module={currentModule}
                 isCompleted={currentLesson ? state.completedLessons.has(currentLesson.lecon_id) : false}
+                canNavigateNext={canNavigateNext()}
                 onPrevious={() => navigateLesson(-1)}
                 onNext={() => navigateLesson(1)}
                 onMarkComplete={handleMarkComplete}

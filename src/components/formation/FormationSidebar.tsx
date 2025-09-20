@@ -1,6 +1,6 @@
 import { FormationData } from '@/data/formation-sample';
 import { FormationState } from '@/hooks/useFormationState';
-import { BookOpen, Calendar, Trophy } from 'lucide-react';
+import { BookOpen, Calendar, Trophy, Lock } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -10,9 +10,11 @@ interface FormationSidebarProps {
   state: FormationState;
   progress: { completed: number; total: number; percentage: number };
   onLessonSelect: (moduleIndex: number, lessonIndex: number) => void;
+  onModuleSelect: (moduleIndex: number) => void;
+  canAccessModule: (moduleIndex: number) => boolean;
 }
 
-export function FormationSidebar({ formation, state, progress, onLessonSelect }: FormationSidebarProps) {
+export function FormationSidebar({ formation, state, progress, onLessonSelect, onModuleSelect, canAccessModule }: FormationSidebarProps) {
   return (
     <aside className="w-80 bg-gradient-to-b from-card to-secondary/30 border-r border-border p-6 flex flex-col gap-6">
       {/* Header */}
@@ -31,39 +33,52 @@ export function FormationSidebar({ formation, state, progress, onLessonSelect }:
               Sommaire
             </div>
             <div className="space-y-2">
-              {formation.programme.map((module, moduleIndex) => (
-                <div key={module.module_id} className="space-y-1">
-                  <div className={cn(
-                    "text-sm font-medium px-3 py-2 rounded-lg",
-                    moduleIndex === state.currentModuleIndex 
-                      ? "bg-primary/10 text-primary" 
-                      : "text-foreground/80"
-                  )}>
-                    {module.titre}
+              {formation.programme.map((module, moduleIndex) => {
+                const hasAccess = canAccessModule(moduleIndex);
+                
+                return (
+                  <div key={module.module_id} className="space-y-1">
+                    <div 
+                      className={cn(
+                        "text-sm font-medium px-3 py-2 rounded-lg cursor-pointer transition-colors flex items-center gap-2",
+                        moduleIndex === state.currentModuleIndex 
+                          ? "bg-primary/10 text-primary" 
+                          : hasAccess
+                          ? "text-foreground/80 hover:bg-accent"
+                          : "text-muted-foreground/50",
+                        !hasAccess && "cursor-not-allowed"
+                      )}
+                      onClick={() => hasAccess && onModuleSelect(moduleIndex)}
+                    >
+                      {!hasAccess && <Lock className="h-3 w-3" />}
+                      {module.titre}
+                    </div>
+                    <div className="ml-3 space-y-1">
+                      {module.lecons.map((lecon, lessonIndex) => (
+                        <div
+                          key={lecon.lecon_id}
+                          onClick={() => hasAccess && onLessonSelect(moduleIndex, lessonIndex)}
+                          className={cn(
+                            "flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer transition-colors text-sm",
+                            moduleIndex === state.currentModuleIndex && lessonIndex === state.currentLessonIndex
+                              ? "bg-gradient-to-r from-primary/20 to-primary/10 text-primary font-medium"
+                              : hasAccess 
+                              ? "hover:bg-accent text-muted-foreground hover:text-foreground"
+                              : "text-muted-foreground/50 cursor-not-allowed",
+                            state.completedLessons.has(lecon.lecon_id) && "text-green-600"
+                          )}
+                        >
+                          {state.completedLessons.has(lecon.lecon_id) && (
+                            <div className="w-2 h-2 bg-green-500 rounded-full" />
+                          )}
+                          <span className="flex-1">{lecon.titre}</span>
+                          <span className="text-xs text-muted-foreground">{lecon.estimated_minutes}min</span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                  <div className="ml-3 space-y-1">
-                    {module.lecons.map((lecon, lessonIndex) => (
-                      <div
-                        key={lecon.lecon_id}
-                        onClick={() => onLessonSelect(moduleIndex, lessonIndex)}
-                        className={cn(
-                          "flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer transition-colors text-sm",
-                          moduleIndex === state.currentModuleIndex && lessonIndex === state.currentLessonIndex
-                            ? "bg-gradient-to-r from-primary/20 to-primary/10 text-primary font-medium"
-                            : "hover:bg-accent text-muted-foreground hover:text-foreground",
-                          state.completedLessons.has(lecon.lecon_id) && "text-green-600"
-                        )}
-                      >
-                        {state.completedLessons.has(lecon.lecon_id) && (
-                          <div className="w-2 h-2 bg-green-500 rounded-full" />
-                        )}
-                        <span className="flex-1">{lecon.titre}</span>
-                        <span className="text-xs text-muted-foreground">{lecon.estimated_minutes}min</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
 

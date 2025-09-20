@@ -99,6 +99,36 @@ export function useFormationState(formation: FormationData) {
     return formation.programme[state.currentModuleIndex] || null;
   }, [formation, state.currentModuleIndex]);
 
+  const canAccessModule = useCallback((moduleIndex: number) => {
+    if (moduleIndex === 0) return true;
+    
+    // Check if all lessons in previous modules are completed
+    for (let i = 0; i < moduleIndex; i++) {
+      const module = formation.programme[i];
+      const allLessonsCompleted = module.lecons.every(lesson => 
+        state.completedLessons.has(lesson.lecon_id)
+      );
+      if (!allLessonsCompleted) return false;
+    }
+    return true;
+  }, [formation, state.completedLessons]);
+
+  const canNavigateNext = useCallback(() => {
+    const currentLesson = getCurrentLesson();
+    if (!currentLesson) return false;
+    
+    const currentModule = getCurrentModule();
+    if (!currentModule) return false;
+    
+    // If there's a quiz in the current module, lesson must be completed
+    if (currentModule.quiz) {
+      return state.completedLessons.has(currentLesson.lecon_id);
+    }
+    
+    // If no quiz, can always navigate
+    return true;
+  }, [getCurrentLesson, getCurrentModule, state.completedLessons]);
+
   return {
     state,
     setCurrentLesson,
@@ -107,6 +137,8 @@ export function useFormationState(formation: FormationData) {
     navigateLesson,
     calculateProgress,
     getCurrentLesson,
-    getCurrentModule
+    getCurrentModule,
+    canAccessModule,
+    canNavigateNext
   };
 }

@@ -9,6 +9,7 @@ interface LessonViewerProps {
   lesson: Lecon | null;
   module: Module | null;
   isCompleted: boolean;
+  canNavigateNext: boolean;
   onPrevious: () => void;
   onNext: () => void;
   onMarkComplete: () => void;
@@ -20,6 +21,7 @@ export function LessonViewer({
   lesson, 
   module, 
   isCompleted, 
+  canNavigateNext,
   onPrevious, 
   onNext, 
   onMarkComplete,
@@ -94,7 +96,7 @@ export function LessonViewer({
               <ChevronLeft className="h-4 w-4 mr-1" />
               Précédent
             </Button>
-            <Button onClick={onNext} size="sm">
+            <Button onClick={onNext} size="sm" disabled={!canNavigateNext}>
               Suivant
               <ChevronRight className="h-4 w-4 ml-1" />
             </Button>
@@ -108,6 +110,7 @@ export function LessonViewer({
           quiz={module.quiz}
           answers={answers}
           onAnswer={onQuizAnswer}
+          onQuizComplete={onMarkComplete}
         />
       )}
     </div>

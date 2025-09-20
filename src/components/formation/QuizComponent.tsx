@@ -1,19 +1,25 @@
+import React, { useState } from 'react';
 import { Quiz } from '@/data/formation-sample';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { CheckCircle, XCircle, HelpCircle } from 'lucide-react';
-import { useState } from 'react';
 
 interface QuizComponentProps {
   quiz: Quiz;
   answers: Record<string, number>;
   onAnswer: (questionId: string, answerIndex: number) => void;
+  onQuizComplete?: () => void;
 }
 
-export function QuizComponent({ quiz, answers, onAnswer }: QuizComponentProps) {
+export function QuizComponent({ quiz, answers, onAnswer, onQuizComplete }: QuizComponentProps) {
   const [showResults, setShowResults] = useState(false);
+
+  // Reset results when quiz changes
+  React.useEffect(() => {
+    setShowResults(false);
+  }, [quiz.quiz_id]);
 
   const allAnswered = quiz.questions.every(q => answers[q.q_id] !== undefined);
   const score = quiz.questions.reduce((total, question) => {
@@ -24,6 +30,7 @@ export function QuizComponent({ quiz, answers, onAnswer }: QuizComponentProps) {
   const handleSubmit = () => {
     if (allAnswered) {
       setShowResults(true);
+      onQuizComplete?.();
     }
   };
 
