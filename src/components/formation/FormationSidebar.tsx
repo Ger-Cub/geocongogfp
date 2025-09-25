@@ -82,25 +82,6 @@ export function FormationSidebar({ formation, state, progress, onLessonSelect, o
             </div>
           </div>
 
-          {/* Daily Plan */}
-          <div>
-            <div className="text-sm font-medium text-foreground/70 mb-3 flex items-center gap-2">
-              <Calendar className="h-4 w-4" />
-              Plan journalier
-            </div>
-            <div className="space-y-2">
-              {formation.planning_journalier.slice(0, 5).map((jour) => (
-                <div
-                  key={jour.jour}
-                  className="flex items-center justify-between px-3 py-2 rounded-lg bg-card border text-sm"
-                >
-                  <span>Jour {jour.jour}</span>
-                  <span className="text-muted-foreground">{jour.minutes_total}min</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
           {/* Progress */}
           <div>
             <div className="text-sm font-medium text-foreground/70 mb-3 flex items-center gap-2">
