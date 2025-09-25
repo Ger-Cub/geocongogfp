@@ -18,44 +18,6 @@ export function DailyPlanSidebar({
 }: DailyPlanSidebarProps) {
   return (
     <div className="space-y-4">
-      {/* Daily Plan */}
-      <Card className="p-4 shadow-card">
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="font-semibold text-foreground flex items-center gap-2">
-            <Calendar className="h-4 w-4 text-primary" />
-            Plan journalier
-          </h3>
-          <div className="text-xs text-muted-foreground">
-            {formation.contexte_utilisateur.duree_jours} jours
-          </div>
-        </div>
-        
-        <div className="space-y-2">
-          {formation.planning_journalier.slice(0, 4).map((jour) => (
-            <div
-              key={jour.jour}
-              className="flex items-center justify-between p-2 rounded-lg bg-secondary/30 hover:bg-secondary/50 transition-colors cursor-pointer"
-            >
-              <div className="text-sm">
-                <div className="font-medium">Jour {jour.jour}</div>
-                <div className="text-xs text-muted-foreground">
-                  {jour.activites.length} activités
-                </div>
-              </div>
-              <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                <Clock className="h-3 w-3" />
-                {jour.minutes_total}min
-              </div>
-            </div>
-          ))}
-          {formation.planning_journalier.length > 4 && (
-            <div className="text-center text-xs text-muted-foreground py-2">
-              +{formation.planning_journalier.length - 4} autres jours
-            </div>
-          )}
-        </div>
-      </Card>
-
       {/* Actions */}
       <Card className="p-4 shadow-card">
         <div className="flex items-center justify-between mb-3">
